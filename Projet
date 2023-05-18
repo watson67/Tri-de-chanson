@@ -1,0 +1,2526 @@
+/* 
+
+ * sans titre.java 
+
+ *  
+
+ * Copyright 2020 thiba <thiba@LAPTOP-4DN9C5EI> 
+
+ *  
+
+ * This program is free software; you can redistribute it and/or modify 
+
+ * it under the terms of the GNU General Public License as published by 
+
+ * the Free Software Foundation; either version 2 of the License, or 
+
+ * (at your option) any later version. 
+
+ *  
+
+ * This program is distributed in the hope that it will be useful, 
+
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+
+ * GNU General Public License for more details. 
+
+ *  
+
+ * You should have received a copy of the GNU General Public License 
+
+ * along with this program; if not, write to the Free Software 
+
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+
+ * MA 02110-1301, USA. 
+
+ *  
+
+ *  
+
+ */ 
+
+ 
+ 
+
+//On importe différents packages que nous allons utiliser tout au long du programme 
+
+ 
+ 
+
+import java.io.*; 
+
+import java.util.*; 
+
+import java.io.BufferedReader; 
+
+import java.io.FileInputStream; 
+
+import java.io.InputStream; 
+
+import java.io.InputStreamReader; 
+
+//Les 4 derniers nous permettront d'extraire un fichier .txt 
+
+ 
+ 
+
+import java.io.FileReader; 
+
+import java.io.IOException; 
+
+import java.io.StringReader; 
+
+import java.util.List; 
+
+import java.util.Map; 
+
+ 
+ 
+
+import edu.stanford.nlp.ling.SentenceUtils; 
+
+import edu.stanford.nlp.ling.TaggedWord; 
+
+import edu.stanford.nlp.ling.HasWord; 
+
+import edu.stanford.nlp.tagger.maxent.MaxentTagger; 
+
+ 
+ 
+ 
+
+public class partie3 { 
+
+ 
+ 
+
+    public static MaxentTagger tagger = new MaxentTagger("F:/insa 20202021/info/Projet1/testt/stanford-postagger-full-2017-06-09/stanford-postagger-full-2017-06-09/models/french.tagger"); 
+
+ 
+ 
+
+    //Extraire un fichier.txt pour pouvoir l'utiliser dans java 
+
+    public static BufferedReader Extraire(String txt) throws IOException { 
+
+             
+
+        //fonction qui extrait le fichier .txt   
+
+         InputStream ips = new FileInputStream(txt); 
+
+         InputStreamReader ipsr = new InputStreamReader(ips); 
+
+         BufferedReader br = new BufferedReader(ipsr);  
+
+ 
+ 
+
+         return br;  
+
+                   } 
+
+                
+
+    public static int[] tableaudesoccurences(ArrayList<String> Motxtemp , ArrayList<String> Motxt){ 
+
+        
+
+        int[]count = new int [Motxt.size()] ; 
+
+        String mot ; 
+
+        for (int i= 0 ; i<Motxt.size(); i++){ 
+
+            count[i]=0 ; 
+
+                        String test = Motxt.get(i) ; 
+
+                     
+
+     
+
+                        for(int j=0; j<Motxtemp.size() ;j++){ 
+
+                            mot = Motxtemp.get(j); 
+
+                             
+
+                             
+
+     
+
+                            if (mot.equals(test)) {      
+
+                            count[i]++; 
+
+                        }  
+
+                             
+
+                        } 
+
+                    } 
+
+        return count ; 
+
+        }    
+
+     
+
+    public static String[][] Recupvec(ArrayList<String> Motxt, String[][] dico) { 
+
+    //Avec cette fonction, on cherche les mots dans le dico et on les mets dans un tableau 
+
+             
+
+        String mot ; 
+
+        String motdico ; 
+
+        String[][]vec = new String[Motxt.size()][201] ; 
+
+        int compteur=0 ; 
+
+         
+
+        for (int i = 0; i<Motxt.size(); i++){ 
+
+        //On recommence pour chaque mot 
+
+                 
+
+            mot= Motxt.get(i); 
+
+             
+
+                for (int j=0; j<dico.length; j++){ 
+
+ 
+ 
+
+                    motdico = dico[j][0] ; 
+
+     
+
+                        if (mot.equals(motdico)){ 
+
+                             
+
+                            for(int k = 0 ; k<dico[i].length ; k++) { 
+
+                                 
+
+                                vec[compteur][k]=dico[j][k]; 
+
+                                 
+
+                                    
+
+                                } 
+
+                                compteur++; 
+
+                                 
+
+                                 
+
+                             } 
+
+                           } 
+
+                } 
+
+             
+
+                 
+
+            return vec ; 
+
+        } 
+
+ 
+ 
+
+        public static double[][] decoupetableau(String[][] tvec){ 
+
+        //Avec cette fonction, on convertit les Strings en double 
+
+             
+
+            double [][] vec = new double[tvec.length][tvec[1].length-1]; 
+
+     
+
+                for (int i = 0; i < tvec.length; i++) { 
+
+                    int t=0; 
+
+                    for (int j = 1; j<tvec[i].length ;j++){ 
+
+                        if (tvec[i][j]==null){ 
+
+                            break; 
+
+                        } 
+
+                        else{ 
+
+                        vec[i][t] = Double.parseDouble(tvec[i][j]); 
+
+                         
+
+                    t++; 
+
+                } 
+
+                    } 
+
+                 
+
+                } 
+
+             
+
+            //on a maintenant un tableau contenant toute les coordonnées des vecteurs sous forme de double, on va donc pouvoir calculer les barycentres 
+
+             
+
+            return vec; 
+
+        } 
+
+     
+
+        public static void CalculBary(double[][] list, int[] nboccur, double barycentre[] ) throws IOException { 
+
+         
+
+            
+
+            int nbelement = nboccur.length; 
+
+            int sommedesoccur=0; 
+
+            for (int i=0;i<nboccur.length; i++){ 
+
+                sommedesoccur=sommedesoccur+nboccur[i]; 
+
+                } 
+
+     
+
+            for (int i=0; i< 200 ; i++) { 
+
+     
+
+                double a=0 ; 
+
+     
+
+                for(int j=0; j<nbelement; j++){ 
+
+     
+
+                    a=a+list[j][i]*nboccur[j]; 
+
+                    
+
+                } 
+
+             
+
+                barycentre[i]=(a/sommedesoccur); 
+
+            } 
+
+             
+
+         
+
+     
+
+        } 
+
+         
+
+        public static void Motxt(String txt, String[][] dico, double[]vec) throws IOException{ 
+
+ 
+ 
+
+            String mot ; 
+
+            String ligne; 
+
+            StringTokenizer st ; 
+
+            ArrayList<String>Motxtemp = new ArrayList<String>(); 
+
+            ArrayList<String>Motxt = new ArrayList<String>(); 
+
+            BufferedReader br = Extraire(txt);   
+
+             
+
+                while ((ligne = br.readLine()) != null) 
+
+            { 
+
+                st = new StringTokenizer(ligne, " ,.;:_-+*/\\.;\n\"{}()=><!?"); 
+
+                 
+
+                    while(st.hasMoreTokens()){ 
+
+                    mot = st.nextToken() ; 
+
+                    mot=mot.toLowerCase() ; 
+
+                    //on convertit les mots en minuscules car le dictionnaire ne contient que des minuscules 
+
+                    Motxtemp.add(mot); 
+
+     
+
+                        if (Motxt.contains(mot)) {   
+
+                         
+
+                    } else { 
+
+                        Motxt.add(mot); 
+
+                 
+
+                } 
+
+             
+
+            } 
+
+            } 
+
+         
+
+            //Motxt contient chaque mot de la chanson en un seul exemplaire 
+
+            //Motxtemp contient tout les mots de la chanson: il peut donc y avoir des doublons 
+
+         
+
+        String[][] tdico = new String[Motxt.size()][201]; 
+
+        tdico = Recupvec( Motxt, dico) ; 
+
+         
+
+ 
+ 
+
+         
+
+        ArrayList<String>mdico = new ArrayList<String>(); 
+
+         
+
+        for (int i= 0 ; i<tdico.length; i++){ 
+
+           
+
+            String test = tdico[i][0]; 
+
+ 
+ 
+
+              for(int j=0; j<Motxtemp.size() ;j++){ 
+
+                    mot = Motxtemp.get(j); 
+
+                             
+
+                    if (mot.equals(test)) {   
+
+                        if (mdico.contains(mot)){ 
+
+                    } 
+
+                        else{ 
+
+                                
+
+                            mdico.add(mot); 
+
+                    }  
+
+                         
+
+                    } 
+
+                } 
+
+            } 
+
+            //Le dictionnaire ne contient pas forcement tout les mots, il faut donc revoir le nombre d'occurence afin de calculer le barycentre 
+
+            //C'est pour cela que l'on fait cette opération afin d'avoir le bon nombre d'occurence associé au bon mot 
+
+ 
+ 
+
+            int[]count = new int [mdico.size()] ; 
+
+            count=tableaudesoccurences(Motxtemp, mdico); 
+
+             
+
+            //On a maintenant le nombre d'occurence de chaque mot 
+
+            double[][] coordonnees = new double [count.length][200] ; 
+
+ 
+ 
+ 
+
+            //On a maintenant un tableau contenant toute les coordonnées, il faut maintenant les convertir en double 
+
+         
+
+            coordonnees = decoupetableau(tdico); 
+
+     
+
+            CalculBary(coordonnees, count, vec); 
+
+         
+
+                 
+
+         
+
+        } 
+
+        
+
+        public static void comparaison(double[] ref1, double[] ref2, double[] ref3, double[] bary, String[][] tgroupe, int n){ 
+
+             
+
+            // on va calculer la distance entre les differents barycentres 
+
+            double d1 =0 ; 
+
+            double d2 = 0 ; 
+
+            double d3 = 0 ; 
+
+             
+
+     
+
+            for(int i=0; i<200;i++){ 
+
+ 
+ 
+
+                 
+
+                 
+
+                d1=(ref1[i]-bary[i])*(ref1[i]-bary[i])+d1; 
+
+                d2=(ref2[i]-bary[i])*(ref2[i]-bary[i])+d2;   
+
+                d3=(ref3[i]-bary[i])*(ref3[i]-bary[i])+d3; 
+
+     
+
+            } 
+
+            d1=Math.sqrt(d1); 
+
+            d2=Math.sqrt(d2); 
+
+            d3=Math.sqrt(d3); 
+
+ 
+ 
+
+            int i = n-1; 
+
+            if (d1 < d2 && d1 < d3){ 
+
+                 
+
+                tgroupe[0][i] = (String.valueOf(n)); 
+
+                 
+
+ 
+ 
+
+            }else{ 
+
+                if (d2<d1 && d2<d3){ 
+
+                    tgroupe[1][i] = (String.valueOf(n)); 
+
+                } 
+
+                else{ 
+
+                    if (d3<d1 && d3<d2){ 
+
+                        tgroupe[2][i] = (String.valueOf(n)); 
+
+                } 
+
+            } 
+
+        } 
+
+         
+
+        } 
+
+         
+
+        public static void tri(double[][] tableaudesbarycentres, int[] reference){ 
+
+ 
+ 
+
+        int j=2; 
+
+        int k=3; 
+
+         
+
+        double testf; 
+
+        double testfinal=10000; 
+
+        //Cette valeur servira de test, les valeurs testées doivent se rapprocher de 0, on l'éloigne donc le plus possible de 0 lors de l'initialisation 
+
+        for( int i = 1; i< j ; i++){ 
+
+            //on part de la chanson numéro 1 
+
+ 
+ 
+
+            for ( j = i+1; j<k ; j++){ 
+
+                //On prend ensuite le numéro de chanson supérieur à celui de la boucle précédente 
+
+ 
+ 
+
+                for ( k=j+1; k < tableaudesbarycentres.length; k++){ 
+
+                    //On prend ensuite le numéro de chanson supérieur à celui de la boucle précédente de sorte à pourvoir tester tout les trios possibles sans tester deux fois le même 
+
+ 
+ 
+
+                    double d1 = 0; 
+
+                    double d2 = 0; 
+
+                    double d3 = 0; 
+
+                    double testd1; 
+
+                    double testd2; 
+
+                    double testd3; 
+
+ 
+ 
+
+                    for (int l=0; l<200; l++){ 
+
+ 
+ 
+ 
+
+                        d1=(tableaudesbarycentres[i][l]-tableaudesbarycentres[j][l])*(tableaudesbarycentres[i][l]-tableaudesbarycentres[j][l]) + d1; 
+
+                        d2=(tableaudesbarycentres[j][l]-tableaudesbarycentres[k][l])*(tableaudesbarycentres[j][l]-tableaudesbarycentres[k][l]) + d2; 
+
+                        d3=(tableaudesbarycentres[i][l]-tableaudesbarycentres[k][l])*(tableaudesbarycentres[i][l]-tableaudesbarycentres[k][l]) + d3; 
+
+                        //on calcule les distances entre les trois barycentres des trois chansons du trio testé 
+
+ 
+ 
+
+                         
+
+                    } 
+
+ 
+ 
+
+                    d1=Math.sqrt(d1); 
+
+                    d2=Math.sqrt(d2); 
+
+                    d3=Math.sqrt(d3); 
+
+                    testd1= Math.abs(d1-d2); 
+
+                    testd2= Math.abs(d2-d3); 
+
+                    testd3= Math.abs(d1-d3); 
+
+                    //Si le triangle est équilatérale, alors la moyenne de ces 3 tests est égale à 0, ou plus elle est proche de 0, plus il est équilatérale 
+
+                    testf = (testd1+testd2+testd3)/3; 
+
+ 
+ 
+
+                    if (testf<testfinal){ 
+
+                        testfinal = testf; 
+
+                        reference[0]=i; 
+
+                        reference[1]=j; 
+
+                        reference[2]=k; 
+
+ 
+ 
+
+                    } 
+
+                         
+
+ 
+ 
+
+         
+
+ 
+ 
+
+                } 
+
+            } 
+
+        } 
+
+        } 
+
+       
+
+        public static void motdico( ArrayList<String> groupe, String[] tgroupe) throws IOException{ 
+
+ 
+ 
+
+            String mot ; 
+
+            String ligne; 
+
+            String chanson; 
+
+            StringTokenizer st ; 
+
+             
+
+             
+
+            for (int i=1;i<tgroupe.length; i++){ 
+
+                if(tgroupe[i]==null){ 
+
+ 
+ 
+
+                }else{ 
+
+                chanson = tgroupe[i]+".txt"; 
+
+             
+
+            BufferedReader br = Extraire(chanson);   
+
+             
+
+                while ((ligne = br.readLine()) != null) 
+
+            { 
+
+                st = new StringTokenizer(ligne, " ,.;:_-+*/\\.;\n\"{}()=><!?"); 
+
+                 
+
+                    while(st.hasMoreTokens()){ 
+
+                    mot = st.nextToken() ; 
+
+                    mot=mot.toLowerCase() ; 
+
+                    //on convertit les mots en minuscules car le dictionnaire ne contient que des minuscules 
+
+                    groupe.add(mot); 
+
+     
+
+            } 
+
+            } 
+
+             
+
+        } 
+
+    } 
+
+    } 
+
+ 
+ 
+
+    public static int[] NbMot(String txt) throws IOException { 
+
+         
+
+        //fonction qui compte le nombre de mot d'une chanson afin de faire un tableau de taille exact pour stocker les mots d'une chanson 
+
+        int nb = 0 ; 
+
+        int[] dimension = new int[2] ;   
+
+        String ligne ; 
+
+        String mot ; 
+
+        int count = 0; 
+
+        int nbdemotplusgrandeligne = 0 ; 
+
+        //on va compter le nombre de mot par ligne avec la variable count    
+
+ 
+ 
+
+        BufferedReader br = Extraire(txt); 
+
+                 
+
+        StringTokenizer st; 
+
+                 
+
+        while ((ligne = br.readLine()) != null) { 
+
+        nb++ ;           
+
+        st = new StringTokenizer(ligne, " ,.;:_-+*/\'{}()=><!?"); 
+
+        count = 0 ; 
+
+        while(st.hasMoreTokens()) 
+
+                { 
+
+                     
+
+            mot = st.nextToken(); 
+
+                                     
+
+                 
+
+                count ++ ; 
+
+                } 
+
+                if (count>nbdemotplusgrandeligne) { 
+
+ 
+ 
+
+                    nbdemotplusgrandeligne=count ; 
+
+                } 
+
+            } 
+
+ 
+ 
+
+            dimension[0] = nb ; 
+
+            dimension[1] = nbdemotplusgrandeligne ; 
+
+                             
+
+        return dimension ; 
+
+                 
+
+    } 
+
+         
+
+    public static String[][] TabDesMots(String txt, String[][] tab) throws IOException { 
+
+        //Fonction qui permet de stocker tous les mots d'une chanson dans un tableau 
+
+     
+
+        BufferedReader br = Extraire(txt); 
+
+        String ligne ; 
+
+        String mot ; 
+
+        StringTokenizer st; 
+
+        int i = 0; 
+
+         
+
+         
+
+        while ((ligne = br.readLine()) != null) { 
+
+             
+
+            st = new StringTokenizer(ligne, " ,.;:_-+*/{}()=><!?"); 
+
+            int j=0 ; 
+
+            while(st.hasMoreTokens()) 
+
+                    { 
+
+                            mot = st.nextToken(); 
+
+                            tab[i][j] = mot; 
+
+                            j++ ; 
+
+                        } 
+
+                    i++ ; 
+
+                    } 
+
+                 
+
+            return tab; 
+
+        } 
+
+     
+
+    public static ArrayList<String> doublon(String[][] chanson){ 
+
+     
+
+    ArrayList<String> doublon = new ArrayList<String>() ; 
+
+ 
+ 
+
+    String mot ; 
+
+    for (int i=0; i<chanson.length; i++){ 
+
+        for (int j=0; j<chanson[i].length;j++){ 
+
+ 
+ 
+
+            mot=chanson[i][j]; 
+
+            if (mot == null){ 
+
+ 
+ 
+
+            }else{ 
+
+            if(mot.equals("A")){ 
+
+ 
+ 
+
+            }else{ 
+
+            mot=mot.toLowerCase(); 
+
+ 
+ 
+
+                if (doublon.contains(mot)){ 
+
+ 
+ 
+
+                }else{ 
+
+                    doublon.add(mot); 
+
+                } 
+
+        }}} 
+
+    } 
+
+    return doublon ; 
+
+        } 
+
+ 
+ 
+
+    public static ArrayList<String> MotImportant (ArrayList<String> motimp , ArrayList<String> doublon ){ 
+
+ 
+ 
+
+        String mot ;  
+
+        String ligne; 
+
+        String test ; 
+
+        StringTokenizer st; 
+
+ 
+ 
+
+        for (int i=0 ; i<doublon.size(); i++ ){ 
+
+             
+
+                mot = doublon.get(i) ; 
+
+                 
+
+                if (mot!= null){ 
+
+                List<List<HasWord>> sentences = MaxentTagger.tokenizeText(new StringReader(mot)); 
+
+                for (List<HasWord> sentence : sentences) { 
+
+                    List<TaggedWord> tSentence = tagger.tagSentence(sentence); 
+
+                    ligne = SentenceUtils.listToString(tSentence, false); 
+
+                    st = new StringTokenizer(ligne, "/"); 
+
+                        while(st.hasMoreTokens()){ 
+
+                            test=st.nextToken(); 
+
+                            if (test.equals("V") || test.equals("VINF") || test.equals("ADJ")  || test.equals("NC") || test.equals("NP") 
+
+                            || test.equals("N") || test.equals("ADV") || test.equals("VPP") ){ 
+
+                                motimp.add(mot); 
+
+                            } 
+
+ 
+ 
+
+                    }    
+
+                } 
+
+            } 
+
+        } 
+
+         
+
+         
+
+ 
+ 
+
+        return motimp ; 
+
+    } 
+
+ 
+ 
+
+    public static void paraphrase(String[][] Dictionnaire, ArrayList<String>dictionnaireV, ArrayList<String> dictionnaireVINF, ArrayList<String> dictionnaireADJ, ArrayList<String> dictionnaireNC , ArrayList<String> dictionnaireN, ArrayList<String> dictionnaireADV, ArrayList<String> dictionnaireVPP, String chanson) throws IOException{ 
+
+         
+
+         
+
+        int i=0; 
+
+        String mot; 
+
+         
+
+ 
+ 
+
+        int[] dimension = new int[2] ; 
+
+        dimension = NbMot(chanson) ; 
+
+        //Fonction qui nous donne les dimensions du tableau qui va stocker la chanson 
+
+        String [][]motchanson = new String [dimension[0]][dimension[1]] ; 
+
+        //On stocke la chanson dans un tableau et non dans une arrayList afin de conserver la forme/vers de la chanson 
+
+        //Il sera ensuite plus simple d'afficher la chanson correctement 
+
+ 
+ 
+
+        String[][] chansonparaphrasee = new String[dimension[0]][dimension[1]] ; 
+
+        boolean test = false; 
+
+        motchanson = TabDesMots(chanson, motchanson) ; 
+
+        System.out.println(""); 
+
+        System.out.println("La chanson que nous allons paraphraser est la suivante"); 
+
+  
+
+        for ( i = 0 ; i<dimension[0]; i++ ) { 
+
+           
+
+            int j=0; 
+
+            test=false; 
+
+             
+
+            while(j<motchanson[i].length && test != true){ 
+
+               
+
+                mot=motchanson[i][j]; 
+
+ 
+ 
+
+                if(mot==null){ 
+
+                    test= true; 
+
+                }else{ 
+
+                System.out.print(mot+" "); 
+
+                j++; 
+
+            } 
+
+                  
+
+            } 
+
+            System.out.println(""); 
+
+        } 
+
+        //On va prendre qu'un seul exemplaire de chaque mot 
+
+         
+
+        double seuil; 
+
+        System.out.println(""); 
+
+        System.out.println("Veuillez entrer le seuil de similarité entre 0 et 30, plus il est proche de 0, plus les mots seront similaires"); 
+
+        System.out.println(""); 
+
+        seuil = Lire.d(); 
+
+        ArrayList<String> doublonchanson = new ArrayList<String>(); 
+
+  
+
+        doublonchanson = doublon(motchanson); 
+
+         
+
+  
+
+        ArrayList<String> Motimp = new ArrayList<String>() ; 
+
+        //On va stocker dans cette ArrayList tout les mots que de la chanson que nous allons modifier 
+
+        Motimp = MotImportant(Motimp, doublonchanson) ; 
+
+        //On a maintenant la liste des mots à modifier  
+
+           
+
+        String ligne; 
+
+        String tst; 
+
+        StringTokenizer st; 
+
+        String[][]motsynonyme = new String[Motimp.size()][2]; 
+
+        //on va stocker ici chaque mot à changer ainsi que son synonyme qui le remplacera dans la chanson 
+
+ 
+ 
+
+        for ( i=0 ; i<Motimp.size() ; i++){ 
+
+            motsynonyme[i][0] = Motimp.get(i); 
+
+        } 
+
+ 
+ 
+ 
+
+        for (i=0 ; i<Motimp.size(); i++){ 
+
+             
+
+            mot = Motimp.get(i); 
+
+ 
+ 
+
+            List<List<HasWord>> sentences = MaxentTagger.tokenizeText(new StringReader(mot)); 
+
+              
+
+             for (List<HasWord> sentence : sentences) { 
+
+                     List<TaggedWord> tSentence = tagger.tagSentence(sentence); 
+
+                     ligne = SentenceUtils.listToString(tSentence, false); 
+
+                      
+
+                     st = new StringTokenizer(ligne, "/"); 
+
+              
+
+                         while(st.hasMoreTokens()){ 
+
+                             tst=st.nextToken(); 
+
+                             
+
+                             if (tst.equals("V")){ 
+
+ 
+ 
+
+                                  
+
+                                motsynonyme[i][1] = recherchemotsynonyme(Dictionnaire, dictionnaireV,  mot,seuil); 
+
+ 
+ 
+
+                                if(motsynonyme[i][1]=="1"){ 
+
+                                    motsynonyme[i][1]=motsynonyme[i][0]; 
+
+                                    //si nous n'avons pas trouvé de synonyme, le mot est conservé 
+
+                                } 
+
+                                      
+
+                              
+
+                             }  
+
+                             if (tst.equals("VINF")){ 
+
+ 
+ 
+
+                                motsynonyme[i][1] = recherchemotsynonyme(Dictionnaire, dictionnaireVINF,mot,seuil);  
+
+                                if(motsynonyme[i][1]=="1"){ 
+
+                                    motsynonyme[i][1]=motsynonyme[i][0]; 
+
+                                    //si nous n'avons pas trouvé de synonyme, le mot est conservé 
+
+                                } 
+
+                             }  
+
+                             if (tst.equals("ADJ")){ 
+
+         
+
+                                motsynonyme[i][1] = recherchemotsynonyme(Dictionnaire, dictionnaireADJ,  mot,seuil);          
+
+                                if(motsynonyme[i][1]=="1"){ 
+
+                                    motsynonyme[i][1]=motsynonyme[i][0]; 
+
+                                    //si nous n'avons pas trouvé de synonyme, le mot est conservé 
+
+                                } 
+
+                             }  
+
+                             if (tst.equals("NC")){ 
+
+ 
+ 
+
+                                motsynonyme[i][1] = recherchemotsynonyme(Dictionnaire, dictionnaireNC,  mot,seuil);       
+
+                                if(motsynonyme[i][1]=="1"){ 
+
+                                    motsynonyme[i][1]=motsynonyme[i][0]; 
+
+                                    //si nous n'avons pas trouvé de synonyme, le mot est conservé 
+
+                                } 
+
+                             }  
+
+                             
+
+                             if (tst.equals("N")){ 
+
+; 
+
+                                motsynonyme[i][1] = recherchemotsynonyme(Dictionnaire, dictionnaireN,  mot,seuil);    
+
+                                if(motsynonyme[i][1]=="1"){ 
+
+                                    motsynonyme[i][1]=motsynonyme[i][0]; 
+
+                                    //si nous n'avons pas trouvé de synonyme, le mot est conservé 
+
+                                } 
+
+                             } 
+
+                             if (tst.equals("ADV")){ 
+
+          
+
+                                motsynonyme[i][1] = recherchemotsynonyme(Dictionnaire, dictionnaireADV,  mot,seuil);      
+
+                                if(motsynonyme[i][1]=="1"){ 
+
+                                    motsynonyme[i][1]=motsynonyme[i][0]; 
+
+                                    //si nous n'avons pas trouvé de synonyme, le mot est conservé 
+
+                                } 
+
+                             } 
+
+                             if (tst.equals("VPP")){ 
+
+     
+
+                                motsynonyme[i][1] = recherchemotsynonyme(Dictionnaire, dictionnaireVPP,  mot,seuil);     
+
+                                if(motsynonyme[i][1]=="1"){ 
+
+                                    motsynonyme[i][1]=motsynonyme[i][0]; 
+
+                                    //si nous n'avons pas trouvé de synonyme, le mot est conservé 
+
+                                } 
+
+                             } 
+
+                              
+
+                             else{ 
+
+  
+
+                             } 
+
+                              
+
+                             } 
+
+             
+
+  
+
+  
+
+        } 
+
+    } 
+
+  
+
+    chansonparaphrasee=motchanson ; 
+
+         
+
+        for (i=0 ; i<motsynonyme.length;i++){ 
+
+            mot = motsynonyme[i][0]; 
+
+ 
+ 
+
+                for (int j=0;j<motchanson.length ; j++){ 
+
+ 
+ 
+
+                    for (int k = 0 ; k<motchanson[j].length; k++){ 
+
+ 
+ 
+
+                        if (mot.equals(motchanson[j][k])){ 
+
+                            chansonparaphrasee[j][k] = motsynonyme[i][1]; 
+
+                        } 
+
+                    } 
+
+ 
+ 
+
+                } 
+
+ 
+ 
+
+        } 
+
+      
+
+ 
+ 
+
+        System.out.println("La chanson paraphrasée est donc la suivante : "); 
+
+         
+
+        for ( i = 0 ; i<chansonparaphrasee.length; i++ ) { 
+
+             
+
+            int j=0; 
+
+            test = false; 
+
+ 
+ 
+
+             while(j<chansonparaphrasee[i].length && test!=true){ 
+
+                if(chansonparaphrasee[i][j]!=null){ 
+
+                    System.out.print(chansonparaphrasee[i][j]+" "); 
+
+                    j++; 
+
+ 
+ 
+
+            }else{ 
+
+                     
+
+                    test =true; 
+
+            } 
+
+                     
+
+ 
+ 
+
+             } 
+
+         System.out.println(""); 
+
+     } 
+
+ 
+ 
+
+    } 
+
+     
+
+    
+
+ 
+ 
+
+    public static String recherchemotsynonyme(String[][] dictionnaire, ArrayList<String> dico, String mot, double seuil) throws IOException{ 
+
+ 
+ 
+
+        String motatest ; 
+
+        String synonyme ; 
+
+        int count=0; 
+
+        ArrayList<String>motsuppose = new ArrayList<String>(); 
+
+         
+
+ 
+ 
+
+        double[] pointderef = new double[200]; 
+
+        //Il s'agit des coordonnées du mot que l'on cherche à remplacer 
+
+ 
+ 
+
+        boolean test; 
+
+        Recupbary(mot, dictionnaire, pointderef); 
+
+ 
+ 
+
+        for (int i =0; i< dico.size(); i++){ 
+
+         
+
+            motatest = dico.get(i); 
+
+            double[] pointtest = new double[200]; 
+
+ 
+ 
+
+            Recupbary(motatest, dictionnaire, pointtest);        
+
+            if(pointtest[1]==0 && pointtest[5]==0){ 
+
+                test=false; 
+
+            }else{ 
+
+                 
+
+                test = CalculDistance(pointderef, pointtest, seuil); 
+
+            } 
+
+ 
+ 
+
+            if (test==true){ 
+
+            motsuppose.add(motatest); 
+
+            count++;             
+
+                    } 
+
+                     
+
+ 
+ 
+
+        } 
+
+        if (count>0){ 
+
+                int lower = 0; 
+
+                int higher = motsuppose.size(); 
+
+                int random = (int)(Math.random() * (higher-lower)) + lower; 
+
+        synonyme = motsuppose.get(random) ; 
+
+        }   else{ 
+
+                synonyme = "1" ; 
+
+        } 
+
+         
+
+        return synonyme; 
+
+    } 
+
+ 
+ 
+ 
+
+    public static void Recupbary(String mot, String[][] dico, double[]vec) { 
+
+        //Avec cette fonction, on cherche les mots dans le dico et on les mets dans un tableau 
+
+                 
+
+            String motdico ; 
+
+            boolean test = false; 
+
+            int i=0; 
+
+ 
+ 
+
+                    while (i<dico.length && test==false){ 
+
+                        motdico = dico[i][0] ; 
+
+                 
+
+ 
+ 
+
+                            if (mot.equals(motdico)){ 
+
+                                int k=1; 
+
+                                while(k<201 && dico[i][k]!=null) { 
+
+                                    //on rajoute ce test au cas ou des mots sans coordonnées se sont rajoutés dans le dictionnaire 
+
+                                    vec[k-1] = Double.parseDouble(dico[i][k]); 
+
+                                    k++; 
+
+                                    } 
+
+                                    test=true; 
+
+                                 } 
+
+                                 i++; 
+
+                                } 
+
+             
+
+            } 
+
+ 
+ 
+
+           
+
+ 
+ 
+ 
+
+    public static int dimensiondico(ArrayList<String> groupe){ 
+
+        int count = 0; 
+
+        ArrayList<String> temp = new ArrayList<String>(); 
+
+        String mot; 
+
+        for (int i = 0; i<groupe.size(); i++){ 
+
+            mot=groupe.get(i); 
+
+ 
+ 
+
+            if (temp.contains(mot)){ 
+
+                 
+
+            }else{ 
+
+                temp.add(mot); 
+
+                count++; 
+
+            } 
+
+        } 
+
+ 
+ 
+
+        return count; 
+
+    } 
+
+ 
+ 
+
+    public static void remplissagedico(String[][] dictionnaire, String[][]dicog, ArrayList<String> motchanson){ 
+
+        //on va d'abord remplir le tableau avec les différents mots 
+
+         
+
+        ArrayList<String> temp =new ArrayList<String>(); 
+
+        //on crée cette liste afin de pouvoir utiliser la fonction .contains() 
+
+        String mot; 
+
+        int j=0; 
+
+        StringTokenizer st; 
+
+ 
+ 
+
+        for (int i=0;i<motchanson.size();i++){ 
+
+            mot=motchanson.get(i); 
+
+            st = new StringTokenizer(mot,"-'/"); 
+
+             
+
+            while(st.hasMoreTokens()){ 
+
+                mot= st.nextToken(); 
+
+                if(temp.contains(mot)){ 
+
+ 
+ 
+
+                }else{ 
+
+                    if(mot=="a" || mot.length()>1){ 
+
+                    temp.add(mot); 
+
+                    dicog[j][0]=mot; 
+
+                    j++; 
+
+                }} 
+
+        }} 
+
+        //on récupère ensuite les vecteurs correspondant aux mots 
+
+ 
+ 
+
+       recupvecp3(dictionnaire, dicog); 
+
+    } 
+
+ 
+ 
+
+    public static void recupvecp3(String[][] dictionnaire, String[][] dicog){ 
+
+ 
+ 
+
+        String mot; 
+
+        String motdico; 
+
+         
+
+ 
+ 
+
+        for(int i=0; i< dicog.length;i++){ 
+
+            mot= dicog[i][0]; 
+
+            int j =0; 
+
+            boolean test= false;     
+
+            if(mot!=null){ 
+
+            motdico = dictionnaire[j][0]; 
+
+             
+
+                while ((test!=true) && (j< dictionnaire.length)){ 
+
+                         
+
+                        motdico = dictionnaire[j][0]; 
+
+ 
+ 
+
+                     if(mot.equals(motdico) && j<dictionnaire.length){ 
+
+                         
+
+                        int k=1; 
+
+                            while(dicog!= null &&   k<201){ 
+
+                                //on rajoute ce test au cas ou le dictionnaire ne contient pas les mots du dictionnaire 
+
+ 
+ 
+
+                            dicog[i][k]=dictionnaire[j][k]; 
+
+                            k++; 
+
+                                     
+
+                    }if (k==200){ 
+
+                    test=true; 
+
+                    } 
+
+                }       
+
+                j++; 
+
+                } 
+
+                 
+
+        } 
+
+    } 
+
+ 
+ 
+
+    } 
+
+     
+
+    public static boolean CalculDistance(double[]pointderef, double[] pointcomparé, double seuil){ 
+
+         
+
+         
+
+        boolean tt; 
+
+        double distance = 0; 
+
+ 
+ 
+
+        for(int i=0; i<200;i++){ 
+
+            distance=(pointderef[i]-pointcomparé[i])*(pointderef[i]-pointcomparé[i])+distance; 
+
+        } 
+
+ 
+ 
+
+        distance=Math.sqrt(distance); 
+
+    
+
+         
+
+        if (distance <= seuil){ 
+
+            tt =true ; 
+
+        } else { 
+
+            tt = false ; 
+
+        } 
+
+ 
+ 
+
+        return tt; 
+
+    } 
+
+    public static void p3(int nb, String[][] dictionnaire) throws IOException{ 
+
+         
+
+     
+
+        ArrayList<String> dictionnaireV = new ArrayList<String>() ; 
+
+        ArrayList<String> dictionnaireVINF = new ArrayList<String>() ; 
+
+        ArrayList<String> dictionnaireADJ = new ArrayList<String>();     
+
+        ArrayList<String> dictionnaireNC = new ArrayList<String>(); 
+
+        ArrayList<String> dictionnaireN = new ArrayList<String>(); 
+
+        ArrayList<String> dictionnaireADV = new ArrayList<String>(); 
+
+        ArrayList<String> dictionnaireVPP = new ArrayList<String>(); 
+
+        String mot; 
+
+        String ligne; 
+
+        String mot2; 
+
+        String test ; 
+
+        StringTokenizer st; 
+
+        StringTokenizer str; 
+
+        String chanson ; 
+
+         
+
+         
+
+         
+
+        for (int i=0 ; i<dictionnaire.length; i++){ 
+
+             
+
+            mot=dictionnaire[i][0]; 
+
+            if (mot!= null){ 
+
+ 
+ 
+
+                 str= new StringTokenizer(mot,"'_-/"); 
+
+                 //on enlève les mots composés avec des apostrophes comme par exemple "l'amour" qui peuvent perturber le tagger 
+
+                mot2=mot; 
+
+                    while(str.hasMoreTokens()){ 
+
+ 
+ 
+
+                     mot=str.nextToken(); 
+
+                         
+
+                        if(mot.length()<3){ 
+
+ 
+ 
+
+                        }else{ 
+
+             
+
+            List<List<HasWord>> sentences = MaxentTagger.tokenizeText(new StringReader(mot)); 
+
+             
+
+            for (List<HasWord> sentence : sentences) { 
+
+                    List<TaggedWord> tSentence = tagger.tagSentence(sentence); 
+
+                    ligne = SentenceUtils.listToString(tSentence, false); 
+
+                 
+
+                    st = new StringTokenizer(ligne, "/"); 
+
+ 
+ 
+ 
+
+                        while(st.hasMoreTokens()){ 
+
+                            test=st.nextToken(); 
+
+                            if (test.equals("V")){ 
+
+                                 
+
+                                    dictionnaireV.add(mot2) ; 
+
+                                     
+
+                             
+
+                            }  
+
+                            if (test.equals("VINF")){ 
+
+                                 
+
+                                    dictionnaireVINF.add(mot2); 
+
+                                     
+
+                            }  
+
+                            if (test.equals("ADJ")){ 
+
+                                 
+
+                                    dictionnaireADJ.add(mot2); 
+
+                             
+
+                            }  
+
+                            if (test.equals("NC")){ 
+
+                                 
+
+                                    dictionnaireNC.add(mot2); 
+
+                         
+
+                            }  
+
+                         
+
+                            if (test.equals("N")){ 
+
+                             
+
+                                    dictionnaireN.add(mot2); 
+
+                             
+
+                            } 
+
+                            if (test.equals("ADV")){ 
+
+                                 
+
+                                    dictionnaireADV.add(mot2); 
+
+                                 
+
+                            } 
+
+                            if (test.equals("VPP")){ 
+
+                                 
+
+                                    dictionnaireVPP.add(mot2); 
+
+                                 
+
+                            }else{ 
+
+ 
+ 
+
+                            } 
+
+                             
+
+                             
+
+                        }           } 
+
+        } 
+
+    } 
+
+    } 
+
+    // on a maintenant un dictionnaire pour chaque classe grammaticale, sans les coordonnees des vecteurs pour economiser de la mémoire 
+
+        } 
+
+ 
+ 
+
+         
+
+        chanson  = String.valueOf(nb)+".txt"; 
+
+        paraphrase(dictionnaire, dictionnaireV, dictionnaireVINF, dictionnaireADJ, dictionnaireNC , dictionnaireN, dictionnaireADV, dictionnaireVPP, chanson);  
+
+ 
+ 
+
+    } 
+
+ 
+ 
+
+    public static void main (String[] args) throws IOException { 
+
+ 
+ 
+ 
+
+    System.out.println(""); 
+
+    System.out.println("ALGORITHME CLASSEMENT DES CHANSONS"); 
+
+ 
+ 
+ 
+
+    String dico = "Dictionnaire.txt" ; 
+
+    String ligne ; 
+
+    String mot ; 
+
+    BufferedReader br = Extraire(dico); 
+
+    String[][] dictionnaire = new String [155565][201]; 
+
+    StringTokenizer st ; 
+
+    int i=0 ; 
+
+    System.out.println("Recuperation du dictionnaire, veuillez patienter"); 
+
+    System.out.println(""); 
+
+    while ((ligne = br.readLine()) != null) 
+
+            { 
+
+             
+
+                     
+
+                st = new StringTokenizer(ligne, " ") ;  
+
+                int j = 0; 
+
+                while (st.hasMoreTokens()){ 
+
+                     
+
+                     
+
+                    mot = st.nextToken() ; 
+
+                    dictionnaire[i][j] = mot ; 
+
+                    j++; 
+
+             
+
+                 
+
+            } 
+
+            i++; 
+
+        } 
+
+     
+
+    System.out.println("Dictionnaire récuperé ! Début du traitement des différentes chansons"); 
+
+    System.out.println(""); 
+
+ 
+ 
+
+         
+
+    //On a maintenant le dictionnaire contenu dans un tableau avec tout les mots dans la première colonne : il sera maintenant beaucoup plus rapide de chercher chaque mot 
+
+    //des chansons dans le dictionnaire, puisque nous avons qu'une seule colonne à tester 
+
+         
+
+    // le txt est le fichier qu'on va lire, ici la 2eme chanson du projet    
+
+    String test; 
+
+        String txt; 
+
+        int nb ;  
+
+        System.out.println("Avez-vous rajouté des chansons à tester dans le dossier ? Si oui veuillez entrer 1, sinon, entrer n'importe quel autre caractère"); 
+
+        test=Lire.S(); 
+
+ 
+ 
+ 
+
+        if (test.equals("1")){ 
+
+ 
+ 
+
+            System.out.println("Il y a 15 chansons dans le programme normalement, si vous avez rajoute une chanson dans le dossier, veuillez vous assurer qu'elle se nomme N.txt avec N le numéro de la chanson supérieur à 15"); 
+
+            System.out.println("Entrer le nombre de chanson à tester"); 
+
+            nb=Lire.i(); 
+
+        } 
+
+        else{ 
+
+ 
+ 
+
+            nb=15; 
+
+        } 
+
+         
+
+        double[][] tableaudesbarycentres= new double[nb+1][200] ; 
+
+        //on va stocker les différents barycentres dans ce tableau pour pour pouvoir utiliser des boucles par la suite* 
+
+     
+
+        for ( int j = 1 ; j< nb+1 ; j++){ 
+
+ 
+ 
+
+            txt=String.valueOf(j)+(".txt");          
+
+            Motxt(txt, dictionnaire, tableaudesbarycentres[j] ) ;    
+
+            System.out.println("Chanson "+txt+  " traitée avec succès"); 
+
+        } 
+
+        System.out.println(""); 
+
+ 
+ 
+
+        double[] ref1 =new double[200] ; 
+
+        double[] ref2 =new double[200] ; 
+
+        double[] ref3 =new double[200] ; 
+
+     
+
+        int[] reference = new int[3]; 
+
+        //on va stocker ici le numero des chansons qui définissent les trois groupes 
+
+ 
+ 
+
+        //on va maintenant former les groupes, pour cela, on va calculer la distance entre les barycentres de tous les trios de chansons possibles et on va garder les plus équidistants, ils définiront donc un groupe 
+
+        System.out.println("Debut de la comparaison et de la classification des différentes chansons"); 
+
+        System.out.println(""); 
+
+ 
+ 
+
+        tri(tableaudesbarycentres, reference); 
+
+        System.out.println("Les chansons servant de références pour former les groupes sont : "); 
+
+ 
+ 
+
+        for(int j=0; j< 3; j++){ 
+
+            System.out.println("  -"+reference[j]); 
+
+        } 
+
+ 
+ 
+
+        ref1 = tableaudesbarycentres[reference[0]]; 
+
+        ref2 = tableaudesbarycentres[reference[1]]; 
+
+        ref3 = tableaudesbarycentres[reference[2]]; 
+
+        String[][] tgroupe = new String[3][nb+1]; 
+
+     
+
+         
+
+        for(i=1 ;i<tableaudesbarycentres.length ;i++){ 
+
+ 
+ 
+
+        comparaison(ref1, ref2, ref3, tableaudesbarycentres[i], tgroupe, i); 
+
+     
+
+        } 
+
+        System.out.println(""); 
+
+        System.out.println("Tri terminé !"); 
+
+        System.out.println(""); 
+
+ 
+ 
+
+        int a =1; 
+
+        for (i=0; i<3;i++){ 
+
+             
+
+        System.out.println("Les chansons appartenant au groupe "+ a +" sont les suivantes :"); 
+
+                 
+
+            for (int j=0;j<nb;j++){ 
+
+                    if(tgroupe[i][j]== null){ 
+
+                    } 
+
+                    else{ 
+
+                    System.out.println("   -"+tgroupe[i][j]); 
+
+                    } 
+
+                } 
+
+            a++; 
+
+ 
+ 
+
+            } 
+
+         
+
+        //Fin du classement des chansons 
+
+        //On va maintenant pouvoir créer un dictionnaire pour chaque groupe, pour cela, on va d'abord mettre tout les mots de toutes les chansons dans une ArrayList 
+
+ 
+ 
+
+        ArrayList<String> mdico1 = new ArrayList<String>(); 
+
+        ArrayList<String> mdico2 = new ArrayList<String>(); 
+
+        ArrayList<String> mdico3 = new ArrayList<String>();   
+
+         
+
+        motdico(mdico1, tgroupe[0]); 
+
+        motdico(mdico2, tgroupe[1]); 
+
+        motdico(mdico3, tgroupe[2]); 
+
+        int n1 = dimensiondico(mdico1); 
+
+        int n2 = dimensiondico(mdico2); 
+
+        int n3 = dimensiondico(mdico3); 
+
+        String[][] dico1 = new String[n1][201]; 
+
+        String[][] dico2 = new String[n2][201];    
+
+        String[][] dico3 = new String[n3][201];   
+
+        
+
+        remplissagedico(dictionnaire, dico1, mdico1); 
+
+        remplissagedico(dictionnaire, dico2, mdico2); 
+
+        remplissagedico(dictionnaire, dico3, mdico3); 
+
+         
+
+         
+
+        mdico1.clear(); 
+
+        mdico2.clear(); 
+
+        mdico3.clear(); 
+
+        //on les vide car on ne les utilisera plus 
+
+ 
+ 
+
+        System.out.println(""); 
+
+        int nchanson=0 ; 
+
+       
+
+      
+
+       System.out.println("Voulez vous paraphraser une chanson ? si oui entrer 1, si non, entrer n'importe quel autre caractère, cela entrainera la fin du programme "); 
+
+       test= Lire.S(); 
+
+       if(test.equals("1")){ 
+
+ 
+ 
+
+           boolean test2=false; 
+
+ 
+ 
+
+            while(test2==false){ 
+
+                System.out.println("Quelle chanson voulez-vous paraphraser ? Entrer le numéro de la chanson"); 
+
+                nchanson = Lire.i() ; 
+
+                  
+
+                  while (nchanson<1 && nchanson>nb ) { 
+
+         
+
+                   System.out.println("Chanson introuvable") ; 
+
+                   System.out.println ("Quelle chanson voulez-vous paraphraser ? Entrer le numéro de la chanson ") ; 
+
+                   nchanson = Lire.i() ; 
+
+               } 
+
+              System.out.println("Dans quel groupe voulez vous transformer cette chanson, Entrer le numéro"); 
+
+              int reponse = Lire.i(); 
+
+        
+
+            while (reponse<0 && reponse>3 ) { 
+
+ 
+ 
+
+                 System.out.println("Groupe invalide") ; 
+
+                 System.out.println ("Veuillez entrer le numéro du groupe, entre 1 et 3 ") ; 
+
+                 reponse = Lire.i() ; 
+
+    } 
+
+ 
+ 
+
+       if (reponse == 1 ){ 
+
+            System.out.println("Bien reçu ! Nous allons transformer cette chanson en une chanson du groupe "+ reponse); 
+
+            p3(nchanson, dico1); 
+
+ 
+ 
+
+       } 
+
+ 
+ 
+
+       if (reponse == 2){ 
+
+            System.out.println("Bien reçu ! Nous allons transformer cette chanson en une chanson du groupe "+ reponse); 
+
+            p3(nchanson, dico2); 
+
+       } 
+
+ 
+ 
+
+       if (reponse ==3){ 
+
+            System.out.println("Bien reçu ! Nous allons transformer cette chanson en une chanson du groupe "+ reponse); 
+
+            p3(nchanson, dico3); 
+
+       } 
+
+ 
+ 
+
+       System.out.println(""); 
+
+       System.out.println("Voulez vous paraphraser une autre chanson ? si oui entrer 1, si non, entrer n'importe quel autre caractère "); 
+
+       test=Lire.S(); 
+
+ 
+ 
+
+       if(test.equals("1")){ 
+
+            
+
+       }       
+
+ 
+ 
+
+    else{ 
+
+        test2=true; 
+
+        System.out.println("FIN DU PROGRAMME"); 
+
+    } 
+
+    
+
+} 
+
+ 
+ 
+
+} 
+
+    } 
+
+} 
+
+ 
+ 
+
+ 
